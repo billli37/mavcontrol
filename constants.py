@@ -22,7 +22,7 @@ RED_UPPER_2 = (180, 255, 255)
 RED_MIN_AREA_PX = 300
 
 # Alignment PID parameters (pixel error -> body velocity)
-ALIGN_PID_KP = (0.0025, 0.0025)
+ALIGN_PID_KP = (0.002, 0.002)
 ALIGN_PID_KI = (0.0, 0.0)
 ALIGN_PID_KD = (0.0008, 0.0008)
 
@@ -33,6 +33,7 @@ MAX_SPEED_MPS = 1.0
 ALT_PID_KP = (0.8,)
 ALT_PID_KI = (0.0,)
 ALT_PID_KD = (0.2,)
+ALTITUDE_SAMPLE_TIMEOUT_S = 5.0
 
 # Vertical velocity limits (body-frame: +vz is down)
 MAX_CLIMB_MPS = 2.0

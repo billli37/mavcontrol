@@ -26,6 +26,7 @@ from constants import (
     ALT_PID_KP,
     ALT_PID_KI,
     ALT_PID_KD,
+    ALTITUDE_SAMPLE_TIMEOUT_S,
     MAX_CLIMB_MPS,
     MAX_DESCENT_MPS,
     LANDING_SWITCH_ALT_M,
@@ -51,7 +52,7 @@ class FlightController:
         self.target_visible = False
         self.land_command_sent = False
 
-        self.relative_alt_m = 0.0
+        self.relative_alt_m = None
         self._altitude_task = None
 
         self.servo_mgr = ServoManager(
@@ -83,8 +84,10 @@ class FlightController:
 
     async def _track_relative_altitude(self):
         try:
-            async for position in self.drone.telemetry.position():
-                self.relative_alt_m = float(position.relative_altitude_m)
+            async for pos_vel in self.drone.telemetry.position_velocity_ned():
+                alt_m = float(-pos_vel.position.down_m)
+                if np.isfinite(alt_m):
+                    self.relative_alt_m = alt_m
         except asyncio.CancelledError:
             raise
         except Exception as exc:
@@ -93,6 +96,16 @@ class FlightController:
     async def _start_altitude_tracking(self):
         if self._altitude_task is None:
             self._altitude_task = asyncio.create_task(self._track_relative_altitude())
+
+    async def _wait_for_altitude_sample(self, timeout_s: float):
+        loop = asyncio.get_running_loop()
+        start_time = loop.time()
+        while loop.time() - start_time <= timeout_s:
+            if self.relative_alt_m is not None:
+                print(f"[ALT] First local altitude sample: {self.relative_alt_m:.3f}m")
+                return
+            await asyncio.sleep(0.05)
+        raise RuntimeError(f"[ALT] timeout: no local altitude sample within {timeout_s:.1f}s")
 
     async def _stop_altitude_tracking(self):
         if self._altitude_task is None:
@@ -444,6 +457,7 @@ class FlightController:
         try:
             await self.connect_and_wait_ready()
             await self._start_altitude_tracking()
+            await self._wait_for_altitude_sample(ALTITUDE_SAMPLE_TIMEOUT_S)
             await self.arm_and_start_offboard()
             await self.takeoff_phase()
             await self.alignment_phase()
