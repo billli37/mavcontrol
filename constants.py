@@ -35,8 +35,8 @@ ALT_PID_KI = (0.0,)
 ALT_PID_KD = (0.2,)
 
 # Vertical velocity limits (body-frame: +vz is down)
-MAX_CLIMB_MPS = 1.5
-MAX_DESCENT_MPS = 1.5
+MAX_CLIMB_MPS = 2.0
+MAX_DESCENT_MPS = 2.0
 
 # Landing transition / descent parameters
 LANDING_SWITCH_ALT_M = 0.25
