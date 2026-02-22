@@ -27,7 +27,7 @@ ALIGN_PID_KI = (0.0, 0.0)
 ALIGN_PID_KD = (0.0008, 0.0008)
 
 # Horizontal velocity limits (body-frame)
-MAX_SPEED_MPS = 0.4
+MAX_SPEED_MPS = 1.0
 
 # Vertical altitude PID parameters (meters -> m/s command)
 ALT_PID_KP = (0.8,)
@@ -35,8 +35,8 @@ ALT_PID_KI = (0.0,)
 ALT_PID_KD = (0.2,)
 
 # Vertical velocity limits (body-frame: +vz is down)
-MAX_CLIMB_MPS = 0.4
-MAX_DESCENT_MPS = 0.4
+MAX_CLIMB_MPS = 1.5
+MAX_DESCENT_MPS = 1.5
 
 # Landing transition / descent parameters
 LANDING_SWITCH_ALT_M = 0.25
