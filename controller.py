@@ -458,10 +458,10 @@ class FlightController:
             await self.connect_and_wait_ready()
             await self._start_altitude_tracking()
             await self._wait_for_altitude_sample(ALTITUDE_SAMPLE_TIMEOUT_S)
-            await self.arm_and_start_offboard()
-            await self.takeoff_phase()
-            await self.alignment_phase()
-            await self.landing_phase()
+            # await self.arm_and_start_offboard()
+            # await self.takeoff_phase()
+            # await self.alignment_phase()
+            # await self.landing_phase()
         except KeyboardInterrupt:
             print("[SYSTEM] Keyboard interrupt")
         except Exception as exc:
