@@ -75,7 +75,6 @@ class FlightController:
         await self.drone.action.arm()
         self.armed = True
 
-        await self.set_velocity_body(0.0, 0.0, 0.0, 0.0)
         await self.set_position_ned(0.0, 0.0, 0.0)
 
         try:

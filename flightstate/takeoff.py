@@ -7,8 +7,6 @@ async def run_takeoff(controller):
     print(f"[FLIGHT] Takeoff phase started target={TAKEOFF_ALT_M:.2f}m")
     controller.servo_mgr.move(ANGLE_LANDING, "DOWN")
 
-    await controller.set_position_ned(0.0, 0.0, -TAKEOFF_ALT_M)
-
     dt = 1.0 / LOOP_HZ
     loop = asyncio.get_running_loop()
     start_time = loop.time()
@@ -16,6 +14,8 @@ async def run_takeoff(controller):
     while True:
         if loop.time() - start_time > TAKEOFF_TIMEOUT_S:
             raise RuntimeError("[TAKEOFF] timeout: altitude target not reached")
+        
+        await controller.set_position_ned(0.0, 0.0, -TAKEOFF_ALT_M)
 
         alt_m = controller.relative_alt_m
         alt_err = None if alt_m is None else TAKEOFF_ALT_M - alt_m
