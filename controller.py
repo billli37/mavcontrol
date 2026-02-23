@@ -60,7 +60,10 @@ class FlightController:
                 break
 
     async def set_velocity_body(self, vx: float, vy: float, vz: float = 0.0, yaw_rate: float = 0.0):
-        await self.drone.offboard.set_velocity_body(VelocityBodyYawspeed(vx, vy, vz, yaw_rate))
+        await self.drone.offboard.set_velocity_body(VelocityBodyYawspeed(vx + 0.1, 
+                                                                         vy + 0.1, 
+                                                                         vz, 
+                                                                         yaw_rate))
 
     async def start_offboard(self):
         # MAVSDK requires one setpoint before starting offboard.
@@ -76,6 +79,8 @@ class FlightController:
         print("[FLIGHT] Arming")
         await self.drone.action.arm()
         self.armed = True
+
+        await asyncio.sleep(2)  # Short delay to ensure arming is processed
 
         print("[FLIGHT] Taking off")
         await self.drone.action.takeoff()
