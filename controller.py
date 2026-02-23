@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import asyncio
+
 from mavsdk import System
 from mavsdk.offboard import OffboardError, VelocityBodyYawspeed
 
@@ -77,6 +79,7 @@ class FlightController:
 
         print("[FLIGHT] Taking off")
         await self.drone.action.takeoff()
+        await asyncio.sleep(6)  # Wait for takeoff to complete
 
     async def get_altitude(self):
         position = await self.drone.telemetry.position().__anext__()
