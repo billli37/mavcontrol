@@ -30,7 +30,7 @@ RED_MIN_AREA_PX = 300
 # Alignment PID parameters (pixel error -> body velocity)
 ALIGN_PID_KP = (0.002, 0.002)
 ALIGN_PID_KI = (0.0, 0.0)
-ALIGN_PID_KD = (0.0008, 0.0008)
+ALIGN_PID_KD = (0.0, 0.0)
 
 # Horizontal velocity limits (body-frame)
 MAX_SPEED_MPS = 1.0
