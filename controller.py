@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from mavsdk import System
-from mavsdk.offboard import PositionNedYaw, VelocityBodyYawspeed
+from mavsdk.offboard import OffboardError, VelocityBodyYawspeed
 
 from constants import (
     CONNECTION_STRING,
@@ -60,8 +60,15 @@ class FlightController:
     async def set_velocity_body(self, vx: float, vy: float, vz: float = 0.0, yaw_rate: float = 0.0):
         await self.drone.offboard.set_velocity_body(VelocityBodyYawspeed(vx, vy, vz, yaw_rate))
 
-    async def set_position_ned(self, north_m: float, east_m: float, down_m: float):
-        await self.drone.offboard.set_position_ned(PositionNedYaw(north_m, east_m, down_m, 0.0))
+    async def start_offboard(self):
+        # MAVSDK requires one setpoint before starting offboard.
+        await self.set_velocity_body(0.0, 0.0, 0.0, 0.0)
+        try:
+            await self.drone.offboard.start()
+            self.offboard_started = True
+            print("[FLIGHT] Offboard started")
+        except OffboardError as exc:
+            raise RuntimeError(f"Offboard start failed: {exc}") from exc
 
     async def arm_and_takeoff(self):
         print("[FLIGHT] Arming")
@@ -107,6 +114,7 @@ class FlightController:
         try:
             await self.connect_and_wait_ready()
             await self.arm_and_takeoff()
+            await self.start_offboard()
             await run_alignment(self)
             await run_pid_landing(self)
             await run_landing(self)
