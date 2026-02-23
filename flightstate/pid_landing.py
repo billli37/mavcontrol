@@ -15,7 +15,7 @@ async def run_pid_landing(controller):
 
         offset = await controller.vision.get_offset(dt=dt)
 
-        current_alt_m = controller.relative_alt_m
+        current_alt_m = await controller.get_altitude()
         if current_alt_m is not None and current_alt_m <= LANDING_SWITCH_ALT_M:
             await controller.set_velocity_body(0.0, 0.0, 0.0, 0.0)
             print(f"[PID_LANDING] Switch altitude reached ({current_alt_m:.2f}m)")

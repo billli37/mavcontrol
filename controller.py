@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 
-import asyncio
-
 from mavsdk import System
-from mavsdk.offboard import OffboardError, PositionNedYaw, VelocityBodyYawspeed
+from mavsdk.offboard import PositionNedYaw, VelocityBodyYawspeed
 
 from constants import (
-    ALTITUDE_SAMPLE_TIMEOUT_S,
     CONNECTION_STRING,
     PWM_CHANNEL,
     PWM_CHIP,
@@ -16,7 +13,6 @@ from constants import (
 from flightstate.alignment import run_alignment
 from flightstate.landing import run_landing
 from flightstate.pid_landing import run_pid_landing
-from flightstate.takeoff import run_takeoff
 from servo import ServoManager
 from vision.controller import VisionController
 
@@ -27,9 +23,6 @@ class FlightController:
         self.offboard_started = False
         self.armed = False
         self.land_command_sent = False
-
-        self.relative_alt_m = None
-        self._altitude_task = None
 
         self.servo_mgr = ServoManager(
             PWM_CHIP=PWM_CHIP,
@@ -70,52 +63,17 @@ class FlightController:
     async def set_position_ned(self, north_m: float, east_m: float, down_m: float):
         await self.drone.offboard.set_position_ned(PositionNedYaw(north_m, east_m, down_m, 0.0))
 
-    async def arm_and_start_offboard(self):
+    async def arm_and_takeoff(self):
         print("[FLIGHT] Arming")
         await self.drone.action.arm()
         self.armed = True
 
-        await self.set_position_ned(0.0, 0.0, 0.0)
+        print("[FLIGHT] Taking off")
+        await self.drone.action.takeoff()
 
-        try:
-            await self.drone.offboard.start()
-            self.offboard_started = True
-            print("[FLIGHT] Offboard started")
-        except OffboardError as exc:
-            raise RuntimeError(f"Offboard start failed: {exc}") from exc
-
-    async def _altitude_tracking_loop(self):
-        try:
-            async for pos_vel in self.drone.telemetry.position_velocity_ned():
-                self.relative_alt_m = -float(pos_vel.position.down_m)
-        except asyncio.CancelledError:
-            raise
-        except Exception as exc:
-            print(f"[ALT] altitude tracking stopped: {exc}")
-
-    async def _start_altitude_tracking(self):
-        if self._altitude_task is None or self._altitude_task.done():
-            self._altitude_task = asyncio.create_task(self._altitude_tracking_loop())
-
-    async def _stop_altitude_tracking(self):
-        if self._altitude_task is None:
-            return
-
-        self._altitude_task.cancel()
-        try:
-            await self._altitude_task
-        except asyncio.CancelledError:
-            pass
-        finally:
-            self._altitude_task = None
-
-    async def _wait_for_altitude_sample(self, timeout_s: float):
-        loop = asyncio.get_running_loop()
-        start = loop.time()
-        while self.relative_alt_m is None:
-            if loop.time() - start > timeout_s:
-                raise RuntimeError("[ALT] timeout waiting for first altitude sample")
-            await asyncio.sleep(0.05)
+    async def get_altitude(self):
+        position = await self.drone.telemetry.position().__anext__()
+        return position.relative_altitude_m
 
     @staticmethod
     def _fmt_alt(alt_m):
@@ -140,7 +98,6 @@ class FlightController:
         if self.armed and not self.land_command_sent:
             await run_landing(self)
 
-        await self._stop_altitude_tracking()
         self.servo_mgr.close()
         await self.vision.stop()
 
@@ -149,10 +106,7 @@ class FlightController:
 
         try:
             await self.connect_and_wait_ready()
-            await self._start_altitude_tracking()
-            await self._wait_for_altitude_sample(ALTITUDE_SAMPLE_TIMEOUT_S)
-            await self.arm_and_start_offboard()
-            await run_takeoff(self)
+            await self.arm_and_takeoff()
             await run_alignment(self)
             await run_pid_landing(self)
             await run_landing(self)

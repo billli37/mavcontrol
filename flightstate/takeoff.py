@@ -17,7 +17,7 @@ async def run_takeoff(controller):
         
         await controller.set_position_ned(0.0, 0.0, -TAKEOFF_ALT_M)
 
-        alt_m = controller.relative_alt_m
+        alt_m = await controller.get_altitude()
         alt_err = None if alt_m is None else TAKEOFF_ALT_M - alt_m
         if alt_err is not None and abs(alt_err) <= TAKEOFF_ALT_TOL_M:
             print(f"[TAKEOFF] Altitude reached ({alt_m:.2f}m)")

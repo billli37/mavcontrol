@@ -17,9 +17,6 @@ LANDING_SWITCH_ALT_M = 0.25
 LANDING_DESCENT_SPEED_MPS = 0.30
 LANDING_DESCENT_TIMEOUT_S = 20.0
 
-# Telemetry / initialization parameters
-ALTITUDE_SAMPLE_TIMEOUT_S = 5.0
-
 # Color detection parameters (HSV, OpenCV ranges)
 # Keep this aligned with real camera output on your setup. Even with BGR888
 # configuration, testing showed RGB->HSV gives correct target detection.

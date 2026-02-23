@@ -14,13 +14,14 @@ async def run_alignment(controller):
         tick_start = loop.time()
 
         offset = await controller.vision.get_offset(dt=dt)
+        current_alt_m = await controller.get_altitude()
         await controller.set_velocity_body(offset.vx, offset.vy, 0.0, 0.0)
 
         controller.vision.render(
             offset,
             status_lines=[
                 "phase=ALIGN",
-                f"alt={controller._fmt_alt(controller.relative_alt_m)}",
+                f"alt={controller._fmt_alt(current_alt_m)}",
             ],
         )
 
