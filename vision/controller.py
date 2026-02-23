@@ -45,7 +45,6 @@ class VisionController:
 
     async def start(self):
         await self.camera.start_camera()
-        self.renderer.init_window()
 
     async def stop(self):
         self.renderer.close_window()

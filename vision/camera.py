@@ -5,6 +5,7 @@ class Camera:
     def __init__(self):
         self.picam2 = None
         self.camera_started = False
+        self.capture_error_reported = False
 
     async def start_camera(self):
         self.picam2 = Picamera2()
@@ -27,6 +28,11 @@ class Camera:
         if not self.picam2 or not self.camera_started:
             return None
         try:
-            return await asyncio.to_thread(self.picam2.capture_array, "main")
-        except Exception:
+            frame = await asyncio.to_thread(self.picam2.capture_array, "main")
+            self.capture_error_reported = False
+            return frame
+        except Exception as exc:
+            if not self.capture_error_reported:
+                print(f"[VISION] Camera frame capture failed: {exc}")
+                self.capture_error_reported = True
             return None

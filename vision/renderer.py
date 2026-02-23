@@ -9,18 +9,18 @@ class PreviewRenderer:
         self.window_name = window_name
         self.window_open = False
         self.frame_color_order = str(FRAME_COLOR_ORDER).upper()
+        self.user_closed = False
 
     def init_window(self):
-        if not self.enabled or self.window_open:
+        if not self.enabled or self.window_open or self.user_closed:
             return
 
         try:
             cv2.namedWindow(self.window_name, cv2.WINDOW_NORMAL)
             self.window_open = True
         except Exception as exc:
-            self.enabled = False
             self.window_open = False
-            print(f"[VISION] Preview disabled (window init failed): {exc}")
+            print(f"[VISION] Preview init failed: {exc}")
 
     def close_window(self):
         if not self.window_open:
@@ -52,7 +52,7 @@ class PreviewRenderer:
 
         if not self.window_open:
             self.init_window()
-            if not self.enabled:
+            if not self.window_open:
                 return
 
         if self.frame_color_order == "RGB":
@@ -132,10 +132,9 @@ class PreviewRenderer:
             cv2.imshow(self.window_name, preview)
             key = cv2.waitKey(1) & 0xFF
             if key == ord("q"):
-                self.enabled = False
+                self.user_closed = True
                 self.close_window()
                 print("[VISION] Preview closed by user")
         except Exception as exc:
-            self.enabled = False
             self.close_window()
-            print(f"[VISION] Preview disabled (render failed): {exc}")
+            print(f"[VISION] Preview render failed, will retry: {exc}")

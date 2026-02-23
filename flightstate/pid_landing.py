@@ -10,6 +10,8 @@ async def run_pid_landing(controller):
     loop = asyncio.get_running_loop()
     end_time = loop.time() + LANDING_DESCENT_TIMEOUT_S
 
+    reached_switch_altitude = False
+
     while loop.time() < end_time:
         tick_start = loop.time()
 
@@ -19,6 +21,7 @@ async def run_pid_landing(controller):
         if current_alt_m is not None and current_alt_m <= LANDING_SWITCH_ALT_M:
             await controller.set_velocity_body(0.0, 0.0, 0.0, 0.0)
             print(f"[PID_LANDING] Switch altitude reached ({current_alt_m:.2f}m)")
+            reached_switch_altitude = True
             break
 
         await controller.set_velocity_body(offset.vx, offset.vy, LANDING_DESCENT_SPEED_MPS, 0.0)
@@ -42,4 +45,5 @@ async def run_pid_landing(controller):
             await asyncio.sleep(remaining)
 
     await controller.set_velocity_body(0.0, 0.0, 0.0, 0.0)
-    raise RuntimeError("[PID_LANDING] timeout: switch altitude not reached before descent timeout")
+    if not reached_switch_altitude:
+        raise RuntimeError("[PID_LANDING] timeout: switch altitude not reached before descent timeout")
