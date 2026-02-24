@@ -10,11 +10,22 @@ async def run_alignment(controller):
     loop = asyncio.get_running_loop()
     end_time = loop.time() + ALIGNMENT_TIMEOUT_S
 
+    hold_position = None
+
     while loop.time() < end_time:
         tick_start = loop.time()
 
         offset = await controller.vision.get_offset(dt=dt)
-        await controller.set_velocity_body(offset.vx, offset.vy, 0.0, 0.0)
+        
+        if offset.target_visible:
+            await controller.set_velocity_body(offset.vx, offset.vy, 0.0, 0.0)
+            hold_position = None
+        else:
+            if hold_position is None:
+                n, e, d = await controller.get_position_ned()
+                hold_position = (n, e, d)
+                print(f"[ALIGN] Target lost, holding position: N={n:.2f} E={e:.2f} D={d:.2f}")
+            await controller.set_position_ned(hold_position[0], hold_position[1], hold_position[2])
 
         controller.vision.render(
             offset,
@@ -30,5 +41,8 @@ async def run_alignment(controller):
         if remaining > 0:
             await asyncio.sleep(remaining)
 
-    await controller.set_velocity_body(0.0, 0.0, 0.0, 0.0)
+    if hold_position is None:
+        n, e, d = await controller.get_position_ned()
+        hold_position = (n, e, d)
+    await controller.set_position_ned(hold_position[0], hold_position[1], hold_position[2])
     print("[ALIGN] timeout reached; holding position and continuing")
