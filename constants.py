@@ -11,6 +11,7 @@ TAKEOFF_TIMEOUT_S = 10.0
 
 # Alignment parameters
 ALIGNMENT_TIMEOUT_S = 5.0
+CUTOFF_ALT_M = 0.15
 
 # PID landing parameters
 LANDING_SWITCH_ALT_M = 0.25

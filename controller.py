@@ -13,8 +13,6 @@ from constants import (
     STEPS_180_DEG,
 )
 from flightstate.alignment import run_alignment
-from flightstate.landing import run_landing
-from flightstate.pid_landing import run_pid_landing
 from flightstate.takeoff import run_takeoff
 from servo import ServoManager
 from vision.controller import VisionController
@@ -109,9 +107,6 @@ class FlightController:
             finally:
                 self.offboard_started = False
 
-        if self.armed and not self.land_command_sent:
-            await run_landing(self)
-
         self.servo_mgr.close()
         await self.vision.stop()
 
@@ -124,8 +119,6 @@ class FlightController:
             await self.start_offboard()
             await run_takeoff(self)
             await run_alignment(self)
-            # await run_pid_landing(self)
-            await run_landing(self)
         except KeyboardInterrupt:
             print("[SYSTEM] Keyboard interrupt")
         except Exception as exc:
