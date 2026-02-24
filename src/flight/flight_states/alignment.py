@@ -13,6 +13,9 @@ async def run(controller: "FlightController") -> None:
     loop = asyncio.get_running_loop()
     end_time = loop.time() + controller.cfg.alignment.timeout_s
     next_log = loop.time()
+    
+    aligned_start_time = None
+    descending = False
 
     while loop.time() < end_time:
         tick_start = loop.time()
@@ -33,19 +36,39 @@ async def run(controller: "FlightController") -> None:
             controller.vision_state.last_valid_target_seen_time = loop.time()
 
         controller.vision_state.target_visible = out.target_visible
-        controller.set_desired_velocity(out.cmd)
+        
+        is_aligned = (out.target_visible and out.err_x_px is not None and out.err_y_px is not None 
+                      and abs(out.err_x_px) < 20 and abs(out.err_y_px) < 20)
+        
+        if is_aligned:
+            if aligned_start_time is None:
+                aligned_start_time = loop.time()
+            elif not descending and (loop.time() - aligned_start_time) >= 5.0:
+                descending = True
+                controller.logger.info("[ALIGN] Aligned for 5s, starting descent")
+        else:
+            aligned_start_time = None
+            descending = False
+        
+        cmd = out.cmd
+        if descending:
+            cmd.vz = -0.1
+        
+        controller.set_desired_velocity(cmd)
         controller.publish_control_status()
 
         if loop.time() >= next_log:
             controller.logger.info(
-                "[ALIGN] mode=%s visible=%s alt=%.2f vx=%.2f vy=%.2f err_x=%s err_y=%s",
+                "[ALIGN] mode=%s visible=%s alt=%.2f vx=%.2f vy=%.2f vz=%.2f err_x=%s err_y=%s aligned=%s",
                 out.mode.value,
                 controller.vision_state.target_visible,
                 controller.telemetry.get_altitude(),
-                out.cmd.vx,
-                out.cmd.vy,
+                cmd.vx,
+                cmd.vy,
+                cmd.vz,
                 "None" if out.err_x_px is None else f"{out.err_x_px:.1f}",
                 "None" if out.err_y_px is None else f"{out.err_y_px:.1f}",
+                is_aligned,
             )
             next_log = loop.time() + 0.5
 

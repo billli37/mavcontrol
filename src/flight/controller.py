@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 
 from comms.protocol import VisionSample
-from flight.flight_states import alignment, landing_descent, takeoff
+from flight.flight_states import alignment, takeoff
 from flight.offboard import OffboardPublisher
 from flight.pid import PID
 from flight.state import ControlState, MissionPhase, VelocityCommand, VisionState
@@ -87,12 +87,6 @@ class FlightController:
 
         await self._offboard_publisher.start()
 
-    async def send_land_command_if_needed(self) -> None:
-        if self.state.armed and not self.state.land_command_sent:
-            self.logger.info("[FLIGHT] Landing")
-            await self.flight_link.land()
-            self.state.land_command_sent = True
-
     async def run(self) -> None:
         try:
             await self._connect_arm_offboard()
@@ -102,9 +96,6 @@ class FlightController:
 
             self.state.phase = MissionPhase.ALIGN
             await alignment.run(self)
-
-            self.state.phase = MissionPhase.LAND_DESCENT
-            await landing_descent.run(self)
         except KeyboardInterrupt:
             self.logger.info("[SYSTEM] Keyboard interrupt")
         except Exception as exc:
@@ -132,14 +123,6 @@ class FlightController:
                 self.logger.error("[FLIGHT] Offboard stop failed: %s", exc)
             finally:
                 self.state.offboard_started = False
-
-        if self.state.armed and not self.state.land_command_sent:
-            try:
-                self.logger.info("[FLIGHT] Landing")
-                await self.flight_link.land()
-                self.state.land_command_sent = True
-            except Exception as exc:
-                self.logger.error("[FLIGHT] Landing command failed: %s", exc)
 
         await self.telemetry.stop()
         self.vision_receiver.stop()
